@@ -11,7 +11,7 @@
 body{font-family:sans-serif;background:#0f0f0f;color:#fff;min-height:100vh;padding:14px}
 h2{color:#ff6b6b;font-size:20px;margin-bottom:14px}
 .tabs{display:flex;gap:6px;margin-bottom:16px}
-.tab{flex:1;padding:9px 2px;border-radius:10px;border:none;cursor:pointer;font-weight:bold;font-size:12px;background:#1e1e1e;color:#aaa}
+.tab{flex:1;padding:9px 2px;border-radius:10px;border:none;cursor:pointer;font-weight:bold;font-size:11px;background:#1e1e1e;color:#aaa}
 .tab.active{background:#ff6b6b;color:#fff}
 .card{background:#1e1e1e;border-radius:14px;padding:14px;margin-bottom:14px}
 .card-title{color:#ff6b6b;font-size:14px;font-weight:bold;margin-bottom:12px}
@@ -26,7 +26,12 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
 .status{font-size:12px}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .hint{font-size:12px;color:#aaa;margin-bottom:8px}
-.loading{text-align:center;color:#aaa;padding:20px;font-size:14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:bold;margin-bottom:8px}
+.badge-compra{background:#1a3a1a;color:#4ade80}
+.badge-cria{background:#1a1a3a;color:#60a5fa}
+.subtabs{display:flex;gap:6px;margin-bottom:12px}
+.subtab{flex:1;padding:7px 2px;border-radius:8px;border:none;cursor:pointer;font-weight:bold;font-size:12px;background:#2a2a2a;color:#aaa}
+.subtab.active{background:#ff6b6b44;color:#ff6b6b;border:1px solid #ff6b6b44}
 </style>
 </head>
 <body>
@@ -39,7 +44,7 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
   <button class="tab active" onclick="showTab('resumen',this)">🏦 Resumen</button>
   <button class="tab" onclick="showTab('puercos',this)">🐷 Puercos</button>
   <button class="tab" onclick="showTab('forex',this)">📈 Forex</button>
-  <button class="tab" onclick="showTab('reductor',this)">🧴 Reductor</button>
+  <button class="tab" onclick="showTab('limpieza',this)">🧴 Limpieza</button>
 </div>
 
 <!-- RESUMEN -->
@@ -47,13 +52,15 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
   <div class="total-card">
     <div class="card-title">💰 Total General</div>
     <div class="row"><span>Total Invertido</span><span id="r-total-inv" style="color:#facc15;font-weight:bold">RD$0.00</span></div>
-    <div class="row"><span>Ganancia / Pérdida</span><span id="r-total-gan" style="font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Valor en Inventario</span><span id="r-total-est" style="color:#60a5fa;font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida Real</span><span id="r-total-gan" style="font-weight:bold">RD$0.00</span></div>
   </div>
   <div class="card">
     <div class="card-title">🐷 Puercos</div>
     <div class="row"><span>Capital Invertido</span><span id="r-p-inv">RD$0.00</span></div>
+    <div class="row"><span>Valor Estimado Inventario</span><span id="r-p-est" style="color:#60a5fa">RD$0.00</span></div>
     <div class="row"><span>Ingresos Ventas</span><span id="r-p-ven" style="color:#4ade80">RD$0.00</span></div>
-    <div class="row"><span>Ganancia / Pérdida</span><span id="r-p-gan" style="font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida Real</span><span id="r-p-gan" style="font-weight:bold">RD$0.00</span></div>
   </div>
   <div class="card">
     <div class="card-title">📈 Forex</div>
@@ -62,7 +69,7 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
     <div class="row"><span>Ganancia / Pérdida</span><span id="r-f-gan" style="font-weight:bold">USD$0.00</span></div>
   </div>
   <div class="card">
-    <div class="card-title">🧴 Reductor</div>
+    <div class="card-title">🧴 Productos de Limpieza</div>
     <div class="row"><span>Total Invertido</span><span id="r-r-inv">RD$0.00</span></div>
     <div class="row"><span>Total Ventas</span><span id="r-r-ven" style="color:#4ade80">RD$0.00</span></div>
     <div class="row"><span>Ganancia / Pérdida</span><span id="r-r-gan" style="font-weight:bold">RD$0.00</span></div>
@@ -72,22 +79,39 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
 <!-- PUERCOS -->
 <div id="tab-puercos" style="display:none">
   <div class="card">
-    <div class="card-title">🐷 Lotes de Animales</div>
-    <div id="lotes-list"></div>
-    <button class="btn-add" onclick="addLote()">+ Agregar Lote</button>
+    <div class="card-title">🐷 Animales</div>
+    <div class="subtabs">
+      <button class="subtab active" onclick="showSubtab('comprados',this)">🛒 Comprados</button>
+      <button class="subtab" onclick="showSubtab('cria',this)">🍼 Cría Propia</button>
+    </div>
+
+    <!-- COMPRADOS -->
+    <div id="sub-comprados">
+      <div id="lotes-list"></div>
+      <button class="btn-add" onclick="addLote()">+ Agregar Animal Comprado</button>
+    </div>
+
+    <!-- CRIA PROPIA -->
+    <div id="sub-cria" style="display:none">
+      <div id="cria-list"></div>
+      <button class="btn-add" onclick="addCria()">+ Agregar Cría</button>
+    </div>
   </div>
+
   <div class="card">
     <div class="card-title">💸 Gastos Operativos</div>
     <div id="gastos-list"></div>
     <button class="btn-add" onclick="addGasto()">+ Agregar Gasto</button>
   </div>
+
   <div class="card">
     <div class="card-title">📊 Resumen Puercos</div>
-    <div class="row"><span>Costo Animales</span><span id="p-costo">RD$0.00</span></div>
+    <div class="row"><span>Costo Animales Comprados</span><span id="p-costo">RD$0.00</span></div>
     <div class="row"><span>Gastos Operativos</span><span id="p-gastos">RD$0.00</span></div>
     <div class="row"><span>Total Invertido</span><span id="p-inv" style="color:#facc15;font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Valor Estimado Inventario</span><span id="p-est" style="color:#60a5fa;font-weight:bold">RD$0.00</span></div>
     <div class="row"><span>Ingresos Ventas</span><span id="p-ven" style="color:#4ade80">RD$0.00</span></div>
-    <div class="row"><span>Ganancia / Pérdida</span><span id="p-gan" style="font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida Real</span><span id="p-gan" style="font-weight:bold">RD$0.00</span></div>
   </div>
 </div>
 
@@ -117,8 +141,8 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
   </div>
 </div>
 
-<!-- REDUCTOR -->
-<div id="tab-reductor" style="display:none">
+<!-- LIMPIEZA -->
+<div id="tab-limpieza" style="display:none">
   <div class="card">
     <div class="card-title">💰 Inversiones / Gastos</div>
     <div id="invs-list"></div>
@@ -130,7 +154,7 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
     <button class="btn-add" onclick="addVenta()">+ Agregar Venta</button>
   </div>
   <div class="card">
-    <div class="card-title">📊 Resumen Reductor</div>
+    <div class="card-title">📊 Resumen Productos de Limpieza</div>
     <div class="row"><span>Total Invertido</span><span id="red-inv" style="color:#facc15;font-weight:bold">RD$0.00</span></div>
     <div class="row"><span>Total Ventas</span><span id="red-ven" style="color:#4ade80">RD$0.00</span></div>
     <div class="row"><span>Ganancia / Pérdida</span><span id="red-gan" style="font-weight:bold">RD$0.00</span></div>
@@ -154,13 +178,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const DOC = doc(db, "data", "main");
 
-let data = {lotes:[],gastos:[],deps:[],rets:[],invs:[],ventas:[],forexBal:""};
+let data = {lotes:[],crias:[],gastos:[],deps:[],rets:[],invs:[],ventas:[],forexBal:""};
 let saveTimer = null;
 
 function setStatus(msg, color="#aaa"){
   const el = document.getElementById("statusMsg");
-  el.textContent = msg;
-  el.style.color = color;
+  el.textContent = msg; el.style.color = color;
 }
 
 async function load(){
@@ -168,12 +191,11 @@ async function load(){
   try {
     const snap = await getDoc(DOC);
     if(snap.exists()) data = {...data, ...snap.data()};
+    if(!data.crias) data.crias = [];
     document.getElementById("forex-balance").value = data.forexBal || "";
     setStatus("✓ Sincronizado", "#4ade80");
     setTimeout(()=>setStatus(""), 2000);
-  } catch(e){
-    setStatus("Sin conexión", "#f87171");
-  }
+  } catch(e){ setStatus("Sin conexión", "#f87171"); }
   render();
 }
 
@@ -185,9 +207,7 @@ async function saveAll(){
       await setDoc(DOC, data);
       setStatus("✓ Guardado", "#4ade80");
       setTimeout(()=>setStatus(""), 2000);
-    } catch(e){
-      setStatus("Error al guardar", "#f87171");
-    }
+    } catch(e){ setStatus("Error al guardar", "#f87171"); }
   }, 1000);
   render();
 }
@@ -204,16 +224,28 @@ const sum = (arr,k) => arr.reduce((a,x)=>a+(parseFloat(x[k])||0),0);
 const colorSpan = (n,usd=false) => `<span style="color:${n>=0?'#4ade80':'#f87171'};font-weight:bold">${usd?fUSD(n):fDOP(n)}</span>`;
 
 window.showTab = function(id, btn){
-  ["resumen","puercos","forex","reductor"].forEach(t=>document.getElementById("tab-"+t).style.display="none");
+  ["resumen","puercos","forex","limpieza"].forEach(t=>document.getElementById("tab-"+t).style.display="none");
   document.getElementById("tab-"+id).style.display="block";
   document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
 }
 
-// LOTES
-window.addLote = function(){ data.lotes.push({id:Date.now(),nombre:"",cantidad:"",costo:"",fecha:today(),vendido:false,venta:""}); saveAll(); }
+window.showSubtab = function(id, btn){
+  ["comprados","cria"].forEach(t=>document.getElementById("sub-"+t).style.display="none");
+  document.getElementById("sub-"+id).style.display="block";
+  document.querySelectorAll(".subtab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+// LOTES COMPRADOS
+window.addLote = function(){ data.lotes.push({id:Date.now(),nombre:"",cantidad:"",costo:"",fecha:today(),vendido:false,venta:"",valorEst:""}); saveAll(); }
 window.delLote = function(id){ data.lotes=data.lotes.filter(l=>l.id!=id); saveAll(); }
 window.updLote = function(id,k,v){ data.lotes=data.lotes.map(l=>l.id==id?{...l,[k]:v}:l); saveAll(); }
+
+// CRIA PROPIA
+window.addCria = function(){ data.crias.push({id:Date.now(),nombre:"",cantidad:"",costoMadre:"",fecha:today(),vendido:false,venta:"",valorEst:"",nota:""}); saveAll(); }
+window.delCria = function(id){ data.crias=data.crias.filter(c=>c.id!=id); saveAll(); }
+window.updCria = function(id,k,v){ data.crias=data.crias.map(c=>c.id==id?{...c,[k]:v}:c); saveAll(); }
 
 // GASTOS
 window.addGasto = function(){ data.gastos.push({id:Date.now(),fecha:today(),tipo:"Alimentación",monto:"",nota:""}); saveAll(); }
@@ -243,6 +275,7 @@ window.updVenta = function(id,k,v){ data.ventas=data.ventas.map(v2=>v2.id==id?{.
 function renderLotes(){
   document.getElementById("lotes-list").innerHTML = data.lotes.map(l=>`
     <div class="item-box">
+      <span class="badge badge-compra">🛒 Comprado</span>
       <div class="row2">
         <input placeholder="Nombre/Lote" value="${l.nombre}" onblur="updLote(${l.id},'nombre',this.value)">
         <input type="number" placeholder="Cantidad" value="${l.cantidad}" onblur="updLote(${l.id},'cantidad',this.value)">
@@ -251,13 +284,39 @@ function renderLotes(){
         <input type="number" placeholder="Costo x unidad RD$" value="${l.costo}" onblur="updLote(${l.id},'costo',this.value)">
         <input type="date" value="${l.fecha}" onchange="updLote(${l.id},'fecha',this.value)">
       </div>
-      ${l.cantidad&&l.costo?`<p style="font-size:12px;color:#facc15;margin:4px 0">Costo lote: ${fDOP((parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0))}</p>`:""}
+      <input type="number" placeholder="Valor estimado venta x unidad RD$" value="${l.valorEst}" onblur="updLote(${l.id},'valorEst',this.value)" style="margin-bottom:8px">
+      ${l.cantidad&&l.costo?`<p style="font-size:12px;color:#facc15;margin:4px 0">💰 Costo total: ${fDOP((parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0))}</p>`:""}
+      ${l.cantidad&&l.valorEst?`<p style="font-size:12px;color:#60a5fa;margin:4px 0">📦 Valor estimado: ${fDOP((parseFloat(l.cantidad)||0)*(parseFloat(l.valorEst)||0))}</p>`:""}
       <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
         <label style="font-size:13px;color:#aaa">¿Vendido?</label>
         <input type="checkbox" ${l.vendido?"checked":""} onchange="updLote(${l.id},'vendido',this.checked)" style="width:auto">
         ${l.vendido?`<input type="number" placeholder="Ingreso venta RD$" value="${l.venta}" onblur="updLote(${l.id},'venta',this.value)">`:""}
       </div>
       <button class="btn-del" onclick="delLote(${l.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+function renderCrias(){
+  document.getElementById("cria-list").innerHTML = data.crias.map(c=>`
+    <div class="item-box">
+      <span class="badge badge-cria">🍼 Cría Propia</span>
+      <div class="row2">
+        <input placeholder="Nombre/Descripción" value="${c.nombre}" onblur="updCria(${c.id},'nombre',this.value)">
+        <input type="number" placeholder="Cantidad" value="${c.cantidad}" onblur="updCria(${c.id},'cantidad',this.value)">
+      </div>
+      <div class="row2">
+        <input type="number" placeholder="Costo madre RD$ (opcional)" value="${c.costoMadre}" onblur="updCria(${c.id},'costoMadre',this.value)">
+        <input type="date" value="${c.fecha}" onchange="updCria(${c.id},'fecha',this.value)">
+      </div>
+      <input type="number" placeholder="Valor estimado venta x unidad RD$" value="${c.valorEst}" onblur="updCria(${c.id},'valorEst',this.value)" style="margin-bottom:8px">
+      <input placeholder="Nota (ej: hijos de puerca #1)" value="${c.nota}" onblur="updCria(${c.id},'nota',this.value)" style="margin-bottom:8px">
+      ${c.cantidad&&c.valorEst?`<p style="font-size:12px;color:#60a5fa;margin:4px 0">📦 Valor estimado: ${fDOP((parseFloat(c.cantidad)||0)*(parseFloat(c.valorEst)||0))}</p>`:""}
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+        <label style="font-size:13px;color:#aaa">¿Vendido?</label>
+        <input type="checkbox" ${c.vendido?"checked":""} onchange="updCria(${c.id},'vendido',this.checked)" style="width:auto">
+        ${c.vendido?`<input type="number" placeholder="Ingreso venta RD$" value="${c.venta}" onblur="updCria(${c.id},'venta',this.value)">`:""}
+      </div>
+      <button class="btn-del" onclick="delCria(${c.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
 
@@ -326,25 +385,46 @@ function renderVentas(){
 }
 
 function render(){
-  renderLotes(); renderGastos(); renderDeps(); renderRets(); renderInvs(); renderVentas();
+  renderLotes(); renderCrias(); renderGastos(); renderDeps(); renderRets(); renderInvs(); renderVentas();
+
+  // PUERCOS
   const pCosto = data.lotes.reduce((a,l)=>a+(parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0),0);
   const pGast = sum(data.gastos,"monto");
-  const pInv = pCosto+pGast;
-  const pVen = data.lotes.filter(l=>l.vendido).reduce((a,l)=>a+(parseFloat(l.venta)||0),0);
-  const pGan = pVen-pInv;
+  const criaCosto = data.crias.reduce((a,c)=>a+(parseFloat(c.costoMadre)||0),0);
+  const pInv = pCosto + pGast + criaCosto;
+
+  // Valor estimado (no vendidos)
+  const pEstLotes = data.lotes.filter(l=>!l.vendido).reduce((a,l)=>a+(parseFloat(l.cantidad)||0)*(parseFloat(l.valorEst)||0),0);
+  const pEstCrias = data.crias.filter(c=>!c.vendido).reduce((a,c)=>a+(parseFloat(c.cantidad)||0)*(parseFloat(c.valorEst)||0),0);
+  const pEst = pEstLotes + pEstCrias;
+
+  // Ventas reales
+  const pVenLotes = data.lotes.filter(l=>l.vendido).reduce((a,l)=>a+(parseFloat(l.venta)||0),0);
+  const pVenCrias = data.crias.filter(c=>c.vendido).reduce((a,c)=>a+(parseFloat(c.venta)||0),0);
+  const pVen = pVenLotes + pVenCrias;
+  const pGan = pVen - pInv;
+
+  // FOREX
   const fDep = sum(data.deps,"monto");
   const fRet = sum(data.rets,"monto");
   const fBal = parseFloat(document.getElementById("forex-balance").value)||0;
   const fGan = fBal+fRet-fDep;
+
+  // LIMPIEZA
   const rInv = sum(data.invs,"monto");
   const rVen = sum(data.ventas,"monto");
   const rGan = rVen-rInv;
+
+  // TOTALES
   const tInv = pInv+fDep+rInv;
+  const tEst = pEst;
   const tGan = pGan+fGan+rGan;
 
+  // Actualizar UI
   document.getElementById("p-costo").textContent=fDOP(pCosto);
   document.getElementById("p-gastos").textContent=fDOP(pGast);
   document.getElementById("p-inv").textContent=fDOP(pInv);
+  document.getElementById("p-est").textContent=fDOP(pEst);
   document.getElementById("p-ven").textContent=fDOP(pVen);
   document.getElementById("p-gan").innerHTML=colorSpan(pGan);
   document.getElementById("f-dep").textContent=fUSD(fDep);
@@ -355,6 +435,7 @@ function render(){
   document.getElementById("red-ven").textContent=fDOP(rVen);
   document.getElementById("red-gan").innerHTML=colorSpan(rGan);
   document.getElementById("r-p-inv").textContent=fDOP(pInv);
+  document.getElementById("r-p-est").textContent=fDOP(pEst);
   document.getElementById("r-p-ven").textContent=fDOP(pVen);
   document.getElementById("r-p-gan").innerHTML=colorSpan(pGan);
   document.getElementById("r-f-dep").textContent=fUSD(fDep);
@@ -364,6 +445,7 @@ function render(){
   document.getElementById("r-r-ven").textContent=fDOP(rVen);
   document.getElementById("r-r-gan").innerHTML=colorSpan(rGan);
   document.getElementById("r-total-inv").textContent=fDOP(tInv);
+  document.getElementById("r-total-est").textContent=fDOP(tEst);
   document.getElementById("r-total-gan").innerHTML=colorSpan(tGan);
 }
 
