@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0f0f0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <title>Mis Inversiones</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -24,15 +23,16 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
 .btn-add{width:100%;padding:11px;background:#ff6b6b;color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:13px;margin-top:6px}
 .btn-del{margin-top:8px;padding:5px 12px;background:#2a0000;color:#f87171;border:1px solid #f87171;border-radius:8px;cursor:pointer;font-size:12px}
 .total-card{background:#1a0a0a;border:1px solid #ff6b6b44;border-radius:14px;padding:14px;margin-bottom:14px}
-.saved{color:#4ade80;font-size:12px}
+.status{font-size:12px}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .hint{font-size:12px;color:#aaa;margin-bottom:8px}
+.loading{text-align:center;color:#aaa;padding:20px;font-size:14px}
 </style>
 </head>
 <body>
 <div class="header">
   <h2>📊 Mis Inversiones</h2>
-  <span class="saved" id="savedMsg" style="display:none">✓ Guardado</span>
+  <span class="status" id="statusMsg" style="color:#aaa">Cargando...</span>
 </div>
 
 <div class="tabs">
@@ -105,8 +105,8 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
   </div>
   <div class="card">
     <div class="card-title">📊 Balance Actual</div>
-    <p class="hint">Actualiza esto diariamente con el balance de tu plataforma:</p>
-    <input type="number" id="forex-balance" placeholder="Balance actual USD" onblur="saveAll()" />
+    <p class="hint">Actualiza esto diariamente:</p>
+    <input type="number" id="forex-balance" placeholder="Balance actual USD" onblur="saveForexBalance()" />
   </div>
   <div class="card">
     <div class="card-title">📊 Resumen Forex</div>
@@ -137,36 +137,73 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
   </div>
 </div>
 
-<script>
-let data = {lotes:[],gastos:[],deps:[],rets:[],invs:[],ventas:[]};
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDVzMza2QQPcb2Mgq9XaPhuMkifbvKrGsk",
+  authDomain: "mis-inversiones-a8e3d.firebaseapp.com",
+  projectId: "mis-inversiones-a8e3d",
+  storageBucket: "mis-inversiones-a8e3d.firebasestorage.app",
+  messagingSenderId: "4827960502",
+  appId: "1:4827960502:web:39b67ef2a75e0be5108217"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const DOC = doc(db, "data", "main");
+
+let data = {lotes:[],gastos:[],deps:[],rets:[],invs:[],ventas:[],forexBal:""};
 let saveTimer = null;
 
-function load(){
-  const s = localStorage.getItem("mis_inv_v2");
-  if(s) data = JSON.parse(s);
-  document.getElementById("forex-balance").value = localStorage.getItem("forex_bal") || "";
+function setStatus(msg, color="#aaa"){
+  const el = document.getElementById("statusMsg");
+  el.textContent = msg;
+  el.style.color = color;
+}
+
+async function load(){
+  setStatus("Cargando...", "#aaa");
+  try {
+    const snap = await getDoc(DOC);
+    if(snap.exists()) data = {...data, ...snap.data()};
+    document.getElementById("forex-balance").value = data.forexBal || "";
+    setStatus("✓ Sincronizado", "#4ade80");
+    setTimeout(()=>setStatus(""), 2000);
+  } catch(e){
+    setStatus("Sin conexión", "#f87171");
+  }
   render();
 }
 
-function saveAll(){
+async function saveAll(){
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>{
-    localStorage.setItem("mis_inv_v2", JSON.stringify(data));
-    localStorage.setItem("forex_bal", document.getElementById("forex-balance").value);
-    const msg = document.getElementById("savedMsg");
-    msg.style.display = "inline";
-    setTimeout(()=>msg.style.display="none", 1500);
+  saveTimer = setTimeout(async ()=>{
+    setStatus("Guardando...", "#facc15");
+    try {
+      await setDoc(DOC, data);
+      setStatus("✓ Guardado", "#4ade80");
+      setTimeout(()=>setStatus(""), 2000);
+    } catch(e){
+      setStatus("Error al guardar", "#f87171");
+    }
   }, 1000);
   render();
+}
+
+window.saveForexBalance = function(){
+  data.forexBal = document.getElementById("forex-balance").value;
+  saveAll();
 }
 
 const today = () => new Date().toISOString().split("T")[0];
 const fDOP = n => "RD$" + Number(n||0).toLocaleString("es-DO",{minimumFractionDigits:2});
 const fUSD = n => "USD$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2});
 const sum = (arr,k) => arr.reduce((a,x)=>a+(parseFloat(x[k])||0),0);
-const color = (n,usd=false) => { const el = usd?fUSD(n):fDOP(n); return `<span style="color:${n>=0?'#4ade80':'#f87171'};font-weight:bold">${el}</span>`; }
+const colorSpan = (n,usd=false) => `<span style="color:${n>=0?'#4ade80':'#f87171'};font-weight:bold">${usd?fUSD(n):fDOP(n)}</span>`;
 
-function showTab(id, btn){
+window.showTab = function(id, btn){
   ["resumen","puercos","forex","reductor"].forEach(t=>document.getElementById("tab-"+t).style.display="none");
   document.getElementById("tab-"+id).style.display="block";
   document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
@@ -174,13 +211,37 @@ function showTab(id, btn){
 }
 
 // LOTES
-function addLote(){ data.lotes.push({id:Date.now(),nombre:"",cantidad:"",costo:"",fecha:today(),vendido:false,venta:""}); saveAll(); }
-function delLote(id){ data.lotes=data.lotes.filter(l=>l.id!=id); saveAll(); }
-function updLote(id,k,v){ data.lotes=data.lotes.map(l=>l.id==id?{...l,[k]:v}:l); saveAll(); }
+window.addLote = function(){ data.lotes.push({id:Date.now(),nombre:"",cantidad:"",costo:"",fecha:today(),vendido:false,venta:""}); saveAll(); }
+window.delLote = function(id){ data.lotes=data.lotes.filter(l=>l.id!=id); saveAll(); }
+window.updLote = function(id,k,v){ data.lotes=data.lotes.map(l=>l.id==id?{...l,[k]:v}:l); saveAll(); }
+
+// GASTOS
+window.addGasto = function(){ data.gastos.push({id:Date.now(),fecha:today(),tipo:"Alimentación",monto:"",nota:""}); saveAll(); }
+window.delGasto = function(id){ data.gastos=data.gastos.filter(g=>g.id!=id); saveAll(); }
+window.updGasto = function(id,k,v){ data.gastos=data.gastos.map(g=>g.id==id?{...g,[k]:v}:g); saveAll(); }
+
+// DEPS
+window.addDep = function(){ data.deps.push({id:Date.now(),fecha:today(),monto:"",nota:""}); saveAll(); }
+window.delDep = function(id){ data.deps=data.deps.filter(d=>d.id!=id); saveAll(); }
+window.updDep = function(id,k,v){ data.deps=data.deps.map(d=>d.id==id?{...d,[k]:v}:d); saveAll(); }
+
+// RETS
+window.addRet = function(){ data.rets.push({id:Date.now(),fecha:today(),monto:"",nota:""}); saveAll(); }
+window.delRet = function(id){ data.rets=data.rets.filter(r=>r.id!=id); saveAll(); }
+window.updRet = function(id,k,v){ data.rets=data.rets.map(r=>r.id==id?{...r,[k]:v}:r); saveAll(); }
+
+// INVS
+window.addInv = function(){ data.invs.push({id:Date.now(),fecha:today(),concepto:"",monto:""}); saveAll(); }
+window.delInv = function(id){ data.invs=data.invs.filter(i=>i.id!=id); saveAll(); }
+window.updInv = function(id,k,v){ data.invs=data.invs.map(i=>i.id==id?{...i,[k]:v}:i); saveAll(); }
+
+// VENTAS
+window.addVenta = function(){ data.ventas.push({id:Date.now(),fecha:today(),concepto:"",monto:""}); saveAll(); }
+window.delVenta = function(id){ data.ventas=data.ventas.filter(v=>v.id!=id); saveAll(); }
+window.updVenta = function(id,k,v){ data.ventas=data.ventas.map(v2=>v2.id==id?{...v2,[k]:v}:v2); saveAll(); }
 
 function renderLotes(){
-  const el = document.getElementById("lotes-list");
-  el.innerHTML = data.lotes.map(l=>`
+  document.getElementById("lotes-list").innerHTML = data.lotes.map(l=>`
     <div class="item-box">
       <div class="row2">
         <input placeholder="Nombre/Lote" value="${l.nombre}" onblur="updLote(${l.id},'nombre',this.value)">
@@ -200,11 +261,6 @@ function renderLotes(){
     </div>`).join("");
 }
 
-// GASTOS
-function addGasto(){ data.gastos.push({id:Date.now(),fecha:today(),tipo:"Alimentación",monto:"",nota:""}); saveAll(); }
-function delGasto(id){ data.gastos=data.gastos.filter(g=>g.id!=id); saveAll(); }
-function updGasto(id,k,v){ data.gastos=data.gastos.map(g=>g.id==id?{...g,[k]:v}:g); saveAll(); }
-
 function renderGastos(){
   const tipos = ["Alimentación","Medicinas/Vacunas","Mano de obra","Muerte de animales","Otro"];
   document.getElementById("gastos-list").innerHTML = data.gastos.map(g=>`
@@ -221,11 +277,6 @@ function renderGastos(){
     </div>`).join("");
 }
 
-// DEPS
-function addDep(){ data.deps.push({id:Date.now(),fecha:today(),monto:"",nota:""}); saveAll(); }
-function delDep(id){ data.deps=data.deps.filter(d=>d.id!=id); saveAll(); }
-function updDep(id,k,v){ data.deps=data.deps.map(d=>d.id==id?{...d,[k]:v}:d); saveAll(); }
-
 function renderDeps(){
   document.getElementById("deps-list").innerHTML = data.deps.map(d=>`
     <div class="item-box">
@@ -237,11 +288,6 @@ function renderDeps(){
       <button class="btn-del" onclick="delDep(${d.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
-
-// RETS
-function addRet(){ data.rets.push({id:Date.now(),fecha:today(),monto:"",nota:""}); saveAll(); }
-function delRet(id){ data.rets=data.rets.filter(r=>r.id!=id); saveAll(); }
-function updRet(id,k,v){ data.rets=data.rets.map(r=>r.id==id?{...r,[k]:v}:r); saveAll(); }
 
 function renderRets(){
   document.getElementById("rets-list").innerHTML = data.rets.map(r=>`
@@ -255,11 +301,6 @@ function renderRets(){
     </div>`).join("");
 }
 
-// INVS
-function addInv(){ data.invs.push({id:Date.now(),fecha:today(),concepto:"",monto:""}); saveAll(); }
-function delInv(id){ data.invs=data.invs.filter(i=>i.id!=id); saveAll(); }
-function updInv(id,k,v){ data.invs=data.invs.map(i=>i.id==id?{...i,[k]:v}:i); saveAll(); }
-
 function renderInvs(){
   document.getElementById("invs-list").innerHTML = data.invs.map(i=>`
     <div class="item-box">
@@ -271,11 +312,6 @@ function renderInvs(){
       <button class="btn-del" onclick="delInv(${i.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
-
-// VENTAS
-function addVenta(){ data.ventas.push({id:Date.now(),fecha:today(),concepto:"",monto:""}); saveAll(); }
-function delVenta(id){ data.ventas=data.ventas.filter(v=>v.id!=id); saveAll(); }
-function updVenta(id,k,v){ data.ventas=data.ventas.map(v2=>v2.id==id?{...v2,[k]:v}:v2); saveAll(); }
 
 function renderVentas(){
   document.getElementById("ventas-list").innerHTML = data.ventas.map(v=>`
@@ -291,48 +327,44 @@ function renderVentas(){
 
 function render(){
   renderLotes(); renderGastos(); renderDeps(); renderRets(); renderInvs(); renderVentas();
-
   const pCosto = data.lotes.reduce((a,l)=>a+(parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0),0);
   const pGast = sum(data.gastos,"monto");
   const pInv = pCosto+pGast;
   const pVen = data.lotes.filter(l=>l.vendido).reduce((a,l)=>a+(parseFloat(l.venta)||0),0);
   const pGan = pVen-pInv;
-
   const fDep = sum(data.deps,"monto");
   const fRet = sum(data.rets,"monto");
   const fBal = parseFloat(document.getElementById("forex-balance").value)||0;
   const fGan = fBal+fRet-fDep;
-
   const rInv = sum(data.invs,"monto");
   const rVen = sum(data.ventas,"monto");
   const rGan = rVen-rInv;
-
   const tInv = pInv+fDep+rInv;
   const tGan = pGan+fGan+rGan;
 
-  document.getElementById("p-costo").textContent = fDOP(pCosto);
-  document.getElementById("p-gastos").textContent = fDOP(pGast);
-  document.getElementById("p-inv").textContent = fDOP(pInv);
-  document.getElementById("p-ven").textContent = fDOP(pVen);
-  document.getElementById("p-gan").innerHTML = color(pGan);
-  document.getElementById("f-dep").textContent = fUSD(fDep);
-  document.getElementById("f-ret").textContent = fUSD(fRet);
-  document.getElementById("f-bal").textContent = fUSD(fBal);
-  document.getElementById("f-gan").innerHTML = color(fGan,true);
-  document.getElementById("red-inv").textContent = fDOP(rInv);
-  document.getElementById("red-ven").textContent = fDOP(rVen);
-  document.getElementById("red-gan").innerHTML = color(rGan);
-  document.getElementById("r-p-inv").textContent = fDOP(pInv);
-  document.getElementById("r-p-ven").textContent = fDOP(pVen);
-  document.getElementById("r-p-gan").innerHTML = color(pGan);
-  document.getElementById("r-f-dep").textContent = fUSD(fDep);
-  document.getElementById("r-f-bal").textContent = fUSD(fBal);
-  document.getElementById("r-f-gan").innerHTML = color(fGan,true);
-  document.getElementById("r-r-inv").textContent = fDOP(rInv);
-  document.getElementById("r-r-ven").textContent = fDOP(rVen);
-  document.getElementById("r-r-gan").innerHTML = color(rGan);
-  document.getElementById("r-total-inv").textContent = fDOP(tInv);
-  document.getElementById("r-total-gan").innerHTML = color(tGan);
+  document.getElementById("p-costo").textContent=fDOP(pCosto);
+  document.getElementById("p-gastos").textContent=fDOP(pGast);
+  document.getElementById("p-inv").textContent=fDOP(pInv);
+  document.getElementById("p-ven").textContent=fDOP(pVen);
+  document.getElementById("p-gan").innerHTML=colorSpan(pGan);
+  document.getElementById("f-dep").textContent=fUSD(fDep);
+  document.getElementById("f-ret").textContent=fUSD(fRet);
+  document.getElementById("f-bal").textContent=fUSD(fBal);
+  document.getElementById("f-gan").innerHTML=colorSpan(fGan,true);
+  document.getElementById("red-inv").textContent=fDOP(rInv);
+  document.getElementById("red-ven").textContent=fDOP(rVen);
+  document.getElementById("red-gan").innerHTML=colorSpan(rGan);
+  document.getElementById("r-p-inv").textContent=fDOP(pInv);
+  document.getElementById("r-p-ven").textContent=fDOP(pVen);
+  document.getElementById("r-p-gan").innerHTML=colorSpan(pGan);
+  document.getElementById("r-f-dep").textContent=fUSD(fDep);
+  document.getElementById("r-f-bal").textContent=fUSD(fBal);
+  document.getElementById("r-f-gan").innerHTML=colorSpan(fGan,true);
+  document.getElementById("r-r-inv").textContent=fDOP(rInv);
+  document.getElementById("r-r-ven").textContent=fDOP(rVen);
+  document.getElementById("r-r-gan").innerHTML=colorSpan(rGan);
+  document.getElementById("r-total-inv").textContent=fDOP(tInv);
+  document.getElementById("r-total-gan").innerHTML=colorSpan(tGan);
 }
 
 load();
