@@ -106,7 +106,7 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
   <div class="card">
     <div class="card-title">📊 Balance Actual</div>
     <p class="hint">Actualiza esto diariamente con el balance de tu plataforma:</p>
-    <input type="number" id="forex-balance" placeholder="Balance actual USD" oninput="saveAll()" />
+    <input type="number" id="forex-balance" placeholder="Balance actual USD" onblur="saveAll()" />
   </div>
   <div class="card">
     <div class="card-title">📊 Resumen Forex</div>
@@ -139,6 +139,7 @@ input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;
 
 <script>
 let data = {lotes:[],gastos:[],deps:[],rets:[],invs:[],ventas:[]};
+let saveTimer = null;
 
 function load(){
   const s = localStorage.getItem("mis_inv_v2");
@@ -148,11 +149,14 @@ function load(){
 }
 
 function saveAll(){
-  localStorage.setItem("mis_inv_v2", JSON.stringify(data));
-  localStorage.setItem("forex_bal", document.getElementById("forex-balance").value);
-  const msg = document.getElementById("savedMsg");
-  msg.style.display = "inline";
-  setTimeout(()=>msg.style.display="none", 1500);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    localStorage.setItem("mis_inv_v2", JSON.stringify(data));
+    localStorage.setItem("forex_bal", document.getElementById("forex-balance").value);
+    const msg = document.getElementById("savedMsg");
+    msg.style.display = "inline";
+    setTimeout(()=>msg.style.display="none", 1500);
+  }, 1000);
   render();
 }
 
@@ -179,18 +183,18 @@ function renderLotes(){
   el.innerHTML = data.lotes.map(l=>`
     <div class="item-box">
       <div class="row2">
-        <input placeholder="Nombre/Lote" value="${l.nombre}" oninput="updLote(${l.id},'nombre',this.value)">
-        <input type="number" placeholder="Cantidad" value="${l.cantidad}" oninput="updLote(${l.id},'cantidad',this.value)">
+        <input placeholder="Nombre/Lote" value="${l.nombre}" onblur="updLote(${l.id},'nombre',this.value)">
+        <input type="number" placeholder="Cantidad" value="${l.cantidad}" onblur="updLote(${l.id},'cantidad',this.value)">
       </div>
       <div class="row2">
-        <input type="number" placeholder="Costo x unidad RD$" value="${l.costo}" oninput="updLote(${l.id},'costo',this.value)">
-        <input type="date" value="${l.fecha}" oninput="updLote(${l.id},'fecha',this.value)">
+        <input type="number" placeholder="Costo x unidad RD$" value="${l.costo}" onblur="updLote(${l.id},'costo',this.value)">
+        <input type="date" value="${l.fecha}" onchange="updLote(${l.id},'fecha',this.value)">
       </div>
       ${l.cantidad&&l.costo?`<p style="font-size:12px;color:#facc15;margin:4px 0">Costo lote: ${fDOP((parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0))}</p>`:""}
       <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
         <label style="font-size:13px;color:#aaa">¿Vendido?</label>
         <input type="checkbox" ${l.vendido?"checked":""} onchange="updLote(${l.id},'vendido',this.checked)" style="width:auto">
-        ${l.vendido?`<input type="number" placeholder="Ingreso venta RD$" value="${l.venta}" oninput="updLote(${l.id},'venta',this.value)">`:""}
+        ${l.vendido?`<input type="number" placeholder="Ingreso venta RD$" value="${l.venta}" onblur="updLote(${l.id},'venta',this.value)">`:""}
       </div>
       <button class="btn-del" onclick="delLote(${l.id})">🗑 Eliminar</button>
     </div>`).join("");
@@ -207,11 +211,11 @@ function renderGastos(){
     <div class="item-box">
       <div class="row2">
         <select onchange="updGasto(${g.id},'tipo',this.value)">${tipos.map(t=>`<option ${g.tipo==t?"selected":""}>${t}</option>`).join("")}</select>
-        <input type="number" placeholder="Monto RD$" value="${g.monto}" oninput="updGasto(${g.id},'monto',this.value)">
+        <input type="number" placeholder="Monto RD$" value="${g.monto}" onblur="updGasto(${g.id},'monto',this.value)">
       </div>
       <div class="row2">
-        <input placeholder="Nota" value="${g.nota}" oninput="updGasto(${g.id},'nota',this.value)">
-        <input type="date" value="${g.fecha}" oninput="updGasto(${g.id},'fecha',this.value)">
+        <input placeholder="Nota" value="${g.nota}" onblur="updGasto(${g.id},'nota',this.value)">
+        <input type="date" value="${g.fecha}" onchange="updGasto(${g.id},'fecha',this.value)">
       </div>
       <button class="btn-del" onclick="delGasto(${g.id})">🗑 Eliminar</button>
     </div>`).join("");
@@ -226,10 +230,10 @@ function renderDeps(){
   document.getElementById("deps-list").innerHTML = data.deps.map(d=>`
     <div class="item-box">
       <div class="row2">
-        <input type="number" placeholder="Monto USD" value="${d.monto}" oninput="updDep(${d.id},'monto',this.value)">
-        <input type="date" value="${d.fecha}" oninput="updDep(${d.id},'fecha',this.value)">
+        <input type="number" placeholder="Monto USD" value="${d.monto}" onblur="updDep(${d.id},'monto',this.value)">
+        <input type="date" value="${d.fecha}" onchange="updDep(${d.id},'fecha',this.value)">
       </div>
-      <input placeholder="Nota" value="${d.nota}" oninput="updDep(${d.id},'nota',this.value)">
+      <input placeholder="Nota" value="${d.nota}" onblur="updDep(${d.id},'nota',this.value)">
       <button class="btn-del" onclick="delDep(${d.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
@@ -243,10 +247,10 @@ function renderRets(){
   document.getElementById("rets-list").innerHTML = data.rets.map(r=>`
     <div class="item-box">
       <div class="row2">
-        <input type="number" placeholder="Monto USD" value="${r.monto}" oninput="updRet(${r.id},'monto',this.value)">
-        <input type="date" value="${r.fecha}" oninput="updRet(${r.id},'fecha',this.value)">
+        <input type="number" placeholder="Monto USD" value="${r.monto}" onblur="updRet(${r.id},'monto',this.value)">
+        <input type="date" value="${r.fecha}" onchange="updRet(${r.id},'fecha',this.value)">
       </div>
-      <input placeholder="Nota" value="${r.nota}" oninput="updRet(${r.id},'nota',this.value)">
+      <input placeholder="Nota" value="${r.nota}" onblur="updRet(${r.id},'nota',this.value)">
       <button class="btn-del" onclick="delRet(${r.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
@@ -260,10 +264,10 @@ function renderInvs(){
   document.getElementById("invs-list").innerHTML = data.invs.map(i=>`
     <div class="item-box">
       <div class="row2">
-        <input placeholder="Concepto" value="${i.concepto}" oninput="updInv(${i.id},'concepto',this.value)">
-        <input type="number" placeholder="Monto RD$" value="${i.monto}" oninput="updInv(${i.id},'monto',this.value)">
+        <input placeholder="Concepto" value="${i.concepto}" onblur="updInv(${i.id},'concepto',this.value)">
+        <input type="number" placeholder="Monto RD$" value="${i.monto}" onblur="updInv(${i.id},'monto',this.value)">
       </div>
-      <input type="date" value="${i.fecha}" oninput="updInv(${i.id},'fecha',this.value)">
+      <input type="date" value="${i.fecha}" onchange="updInv(${i.id},'fecha',this.value)">
       <button class="btn-del" onclick="delInv(${i.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
@@ -277,10 +281,10 @@ function renderVentas(){
   document.getElementById("ventas-list").innerHTML = data.ventas.map(v=>`
     <div class="item-box">
       <div class="row2">
-        <input placeholder="Concepto" value="${v.concepto}" oninput="updVenta(${v.id},'concepto',this.value)">
-        <input type="number" placeholder="Monto RD$" value="${v.monto}" oninput="updVenta(${v.id},'monto',this.value)">
+        <input placeholder="Concepto" value="${v.concepto}" onblur="updVenta(${v.id},'concepto',this.value)">
+        <input type="number" placeholder="Monto RD$" value="${v.monto}" onblur="updVenta(${v.id},'monto',this.value)">
       </div>
-      <input type="date" value="${v.fecha}" oninput="updVenta(${v.id},'fecha',this.value)">
+      <input type="date" value="${v.fecha}" onchange="updVenta(${v.id},'fecha',this.value)">
       <button class="btn-del" onclick="delVenta(${v.id})">🗑 Eliminar</button>
     </div>`).join("");
 }
@@ -306,25 +310,18 @@ function render(){
   const tInv = pInv+fDep+rInv;
   const tGan = pGan+fGan+rGan;
 
-  // Puercos
   document.getElementById("p-costo").textContent = fDOP(pCosto);
   document.getElementById("p-gastos").textContent = fDOP(pGast);
   document.getElementById("p-inv").textContent = fDOP(pInv);
   document.getElementById("p-ven").textContent = fDOP(pVen);
   document.getElementById("p-gan").innerHTML = color(pGan);
-
-  // Forex
   document.getElementById("f-dep").textContent = fUSD(fDep);
   document.getElementById("f-ret").textContent = fUSD(fRet);
   document.getElementById("f-bal").textContent = fUSD(fBal);
   document.getElementById("f-gan").innerHTML = color(fGan,true);
-
-  // Reductor
   document.getElementById("red-inv").textContent = fDOP(rInv);
   document.getElementById("red-ven").textContent = fDOP(rVen);
   document.getElementById("red-gan").innerHTML = color(rGan);
-
-  // Resumen
   document.getElementById("r-p-inv").textContent = fDOP(pInv);
   document.getElementById("r-p-ven").textContent = fDOP(pVen);
   document.getElementById("r-p-gan").innerHTML = color(pGan);
