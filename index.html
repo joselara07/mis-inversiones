@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Mis Inversiones</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#0f0f0f;color:#fff;min-height:100vh;padding:14px}
+h2{color:#ff6b6b;font-size:20px;margin-bottom:14px}
+.tabs{display:flex;gap:6px;margin-bottom:16px}
+.tab{flex:1;padding:9px 2px;border-radius:10px;border:none;cursor:pointer;font-weight:bold;font-size:12px;background:#1e1e1e;color:#aaa}
+.tab.active{background:#ff6b6b;color:#fff}
+.card{background:#1e1e1e;border-radius:14px;padding:14px;margin-bottom:14px}
+.card-title{color:#ff6b6b;font-size:14px;font-weight:bold;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #2a2a2a;font-size:13px}
+.row span:first-child{color:#aaa}
+.item-box{background:#2a2a2a;border-radius:10px;padding:12px;margin-bottom:10px}
+.row2{display:flex;gap:8px;margin-bottom:8px}
+input,select{background:#111;color:#fff;border:1px solid #333;border-radius:8px;padding:8px 10px;font-size:13px;width:100%}
+.btn-add{width:100%;padding:11px;background:#ff6b6b;color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:bold;font-size:13px;margin-top:6px}
+.btn-del{margin-top:8px;padding:5px 12px;background:#2a0000;color:#f87171;border:1px solid #f87171;border-radius:8px;cursor:pointer;font-size:12px}
+.total-card{background:#1a0a0a;border:1px solid #ff6b6b44;border-radius:14px;padding:14px;margin-bottom:14px}
+.saved{color:#4ade80;font-size:12px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.hint{font-size:12px;color:#aaa;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h2>📊 Mis Inversiones</h2>
+  <span class="saved" id="savedMsg" style="display:none">✓ Guardado</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('resumen',this)">🏦 Resumen</button>
+  <button class="tab" onclick="showTab('puercos',this)">🐷 Puercos</button>
+  <button class="tab" onclick="showTab('forex',this)">📈 Forex</button>
+  <button class="tab" onclick="showTab('reductor',this)">🧴 Reductor</button>
+</div>
+
+<!-- RESUMEN -->
+<div id="tab-resumen">
+  <div class="total-card">
+    <div class="card-title">💰 Total General</div>
+    <div class="row"><span>Total Invertido</span><span id="r-total-inv" style="color:#facc15;font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="r-total-gan" style="font-weight:bold">RD$0.00</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🐷 Puercos</div>
+    <div class="row"><span>Capital Invertido</span><span id="r-p-inv">RD$0.00</span></div>
+    <div class="row"><span>Ingresos Ventas</span><span id="r-p-ven" style="color:#4ade80">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="r-p-gan" style="font-weight:bold">RD$0.00</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📈 Forex</div>
+    <div class="row"><span>Total Depositado</span><span id="r-f-dep">USD$0.00</span></div>
+    <div class="row"><span>Balance Actual</span><span id="r-f-bal" style="color:#60a5fa">USD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="r-f-gan" style="font-weight:bold">USD$0.00</span></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🧴 Reductor</div>
+    <div class="row"><span>Total Invertido</span><span id="r-r-inv">RD$0.00</span></div>
+    <div class="row"><span>Total Ventas</span><span id="r-r-ven" style="color:#4ade80">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="r-r-gan" style="font-weight:bold">RD$0.00</span></div>
+  </div>
+</div>
+
+<!-- PUERCOS -->
+<div id="tab-puercos" style="display:none">
+  <div class="card">
+    <div class="card-title">🐷 Lotes de Animales</div>
+    <div id="lotes-list"></div>
+    <button class="btn-add" onclick="addLote()">+ Agregar Lote</button>
+  </div>
+  <div class="card">
+    <div class="card-title">💸 Gastos Operativos</div>
+    <div id="gastos-list"></div>
+    <button class="btn-add" onclick="addGasto()">+ Agregar Gasto</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Resumen Puercos</div>
+    <div class="row"><span>Costo Animales</span><span id="p-costo">RD$0.00</span></div>
+    <div class="row"><span>Gastos Operativos</span><span id="p-gastos">RD$0.00</span></div>
+    <div class="row"><span>Total Invertido</span><span id="p-inv" style="color:#facc15;font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Ingresos Ventas</span><span id="p-ven" style="color:#4ade80">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="p-gan" style="font-weight:bold">RD$0.00</span></div>
+  </div>
+</div>
+
+<!-- FOREX -->
+<div id="tab-forex" style="display:none">
+  <div class="card">
+    <div class="card-title">💵 Depósitos</div>
+    <div id="deps-list"></div>
+    <button class="btn-add" onclick="addDep()">+ Agregar Depósito</button>
+  </div>
+  <div class="card">
+    <div class="card-title">💸 Retiros</div>
+    <div id="rets-list"></div>
+    <button class="btn-add" onclick="addRet()">+ Agregar Retiro</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Balance Actual</div>
+    <p class="hint">Actualiza esto diariamente con el balance de tu plataforma:</p>
+    <input type="number" id="forex-balance" placeholder="Balance actual USD" oninput="saveAll()" />
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Resumen Forex</div>
+    <div class="row"><span>Total Depositado</span><span id="f-dep">USD$0.00</span></div>
+    <div class="row"><span>Total Retirado</span><span id="f-ret">USD$0.00</span></div>
+    <div class="row"><span>Balance Actual</span><span id="f-bal" style="color:#60a5fa">USD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="f-gan" style="font-weight:bold">USD$0.00</span></div>
+  </div>
+</div>
+
+<!-- REDUCTOR -->
+<div id="tab-reductor" style="display:none">
+  <div class="card">
+    <div class="card-title">💰 Inversiones / Gastos</div>
+    <div id="invs-list"></div>
+    <button class="btn-add" onclick="addInv()">+ Agregar Inversión/Gasto</button>
+  </div>
+  <div class="card">
+    <div class="card-title">🛒 Ventas</div>
+    <div id="ventas-list"></div>
+    <button class="btn-add" onclick="addVenta()">+ Agregar Venta</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📊 Resumen Reductor</div>
+    <div class="row"><span>Total Invertido</span><span id="red-inv" style="color:#facc15;font-weight:bold">RD$0.00</span></div>
+    <div class="row"><span>Total Ventas</span><span id="red-ven" style="color:#4ade80">RD$0.00</span></div>
+    <div class="row"><span>Ganancia / Pérdida</span><span id="red-gan" style="font-weight:bold">RD$0.00</span></div>
+  </div>
+</div>
+
+<script>
+let data = {lotes:[],gastos:[],deps:[],rets:[],invs:[],ventas:[]};
+
+function load(){
+  const s = localStorage.getItem("mis_inv_v2");
+  if(s) data = JSON.parse(s);
+  document.getElementById("forex-balance").value = localStorage.getItem("forex_bal") || "";
+  render();
+}
+
+function saveAll(){
+  localStorage.setItem("mis_inv_v2", JSON.stringify(data));
+  localStorage.setItem("forex_bal", document.getElementById("forex-balance").value);
+  const msg = document.getElementById("savedMsg");
+  msg.style.display = "inline";
+  setTimeout(()=>msg.style.display="none", 1500);
+  render();
+}
+
+const today = () => new Date().toISOString().split("T")[0];
+const fDOP = n => "RD$" + Number(n||0).toLocaleString("es-DO",{minimumFractionDigits:2});
+const fUSD = n => "USD$" + Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2});
+const sum = (arr,k) => arr.reduce((a,x)=>a+(parseFloat(x[k])||0),0);
+const color = (n,usd=false) => { const el = usd?fUSD(n):fDOP(n); return `<span style="color:${n>=0?'#4ade80':'#f87171'};font-weight:bold">${el}</span>`; }
+
+function showTab(id, btn){
+  ["resumen","puercos","forex","reductor"].forEach(t=>document.getElementById("tab-"+t).style.display="none");
+  document.getElementById("tab-"+id).style.display="block";
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+// LOTES
+function addLote(){ data.lotes.push({id:Date.now(),nombre:"",cantidad:"",costo:"",fecha:today(),vendido:false,venta:""}); saveAll(); }
+function delLote(id){ data.lotes=data.lotes.filter(l=>l.id!=id); saveAll(); }
+function updLote(id,k,v){ data.lotes=data.lotes.map(l=>l.id==id?{...l,[k]:v}:l); saveAll(); }
+
+function renderLotes(){
+  const el = document.getElementById("lotes-list");
+  el.innerHTML = data.lotes.map(l=>`
+    <div class="item-box">
+      <div class="row2">
+        <input placeholder="Nombre/Lote" value="${l.nombre}" oninput="updLote(${l.id},'nombre',this.value)">
+        <input type="number" placeholder="Cantidad" value="${l.cantidad}" oninput="updLote(${l.id},'cantidad',this.value)">
+      </div>
+      <div class="row2">
+        <input type="number" placeholder="Costo x unidad RD$" value="${l.costo}" oninput="updLote(${l.id},'costo',this.value)">
+        <input type="date" value="${l.fecha}" oninput="updLote(${l.id},'fecha',this.value)">
+      </div>
+      ${l.cantidad&&l.costo?`<p style="font-size:12px;color:#facc15;margin:4px 0">Costo lote: ${fDOP((parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0))}</p>`:""}
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+        <label style="font-size:13px;color:#aaa">¿Vendido?</label>
+        <input type="checkbox" ${l.vendido?"checked":""} onchange="updLote(${l.id},'vendido',this.checked)" style="width:auto">
+        ${l.vendido?`<input type="number" placeholder="Ingreso venta RD$" value="${l.venta}" oninput="updLote(${l.id},'venta',this.value)">`:""}
+      </div>
+      <button class="btn-del" onclick="delLote(${l.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+// GASTOS
+function addGasto(){ data.gastos.push({id:Date.now(),fecha:today(),tipo:"Alimentación",monto:"",nota:""}); saveAll(); }
+function delGasto(id){ data.gastos=data.gastos.filter(g=>g.id!=id); saveAll(); }
+function updGasto(id,k,v){ data.gastos=data.gastos.map(g=>g.id==id?{...g,[k]:v}:g); saveAll(); }
+
+function renderGastos(){
+  const tipos = ["Alimentación","Medicinas/Vacunas","Mano de obra","Muerte de animales","Otro"];
+  document.getElementById("gastos-list").innerHTML = data.gastos.map(g=>`
+    <div class="item-box">
+      <div class="row2">
+        <select onchange="updGasto(${g.id},'tipo',this.value)">${tipos.map(t=>`<option ${g.tipo==t?"selected":""}>${t}</option>`).join("")}</select>
+        <input type="number" placeholder="Monto RD$" value="${g.monto}" oninput="updGasto(${g.id},'monto',this.value)">
+      </div>
+      <div class="row2">
+        <input placeholder="Nota" value="${g.nota}" oninput="updGasto(${g.id},'nota',this.value)">
+        <input type="date" value="${g.fecha}" oninput="updGasto(${g.id},'fecha',this.value)">
+      </div>
+      <button class="btn-del" onclick="delGasto(${g.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+// DEPS
+function addDep(){ data.deps.push({id:Date.now(),fecha:today(),monto:"",nota:""}); saveAll(); }
+function delDep(id){ data.deps=data.deps.filter(d=>d.id!=id); saveAll(); }
+function updDep(id,k,v){ data.deps=data.deps.map(d=>d.id==id?{...d,[k]:v}:d); saveAll(); }
+
+function renderDeps(){
+  document.getElementById("deps-list").innerHTML = data.deps.map(d=>`
+    <div class="item-box">
+      <div class="row2">
+        <input type="number" placeholder="Monto USD" value="${d.monto}" oninput="updDep(${d.id},'monto',this.value)">
+        <input type="date" value="${d.fecha}" oninput="updDep(${d.id},'fecha',this.value)">
+      </div>
+      <input placeholder="Nota" value="${d.nota}" oninput="updDep(${d.id},'nota',this.value)">
+      <button class="btn-del" onclick="delDep(${d.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+// RETS
+function addRet(){ data.rets.push({id:Date.now(),fecha:today(),monto:"",nota:""}); saveAll(); }
+function delRet(id){ data.rets=data.rets.filter(r=>r.id!=id); saveAll(); }
+function updRet(id,k,v){ data.rets=data.rets.map(r=>r.id==id?{...r,[k]:v}:r); saveAll(); }
+
+function renderRets(){
+  document.getElementById("rets-list").innerHTML = data.rets.map(r=>`
+    <div class="item-box">
+      <div class="row2">
+        <input type="number" placeholder="Monto USD" value="${r.monto}" oninput="updRet(${r.id},'monto',this.value)">
+        <input type="date" value="${r.fecha}" oninput="updRet(${r.id},'fecha',this.value)">
+      </div>
+      <input placeholder="Nota" value="${r.nota}" oninput="updRet(${r.id},'nota',this.value)">
+      <button class="btn-del" onclick="delRet(${r.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+// INVS
+function addInv(){ data.invs.push({id:Date.now(),fecha:today(),concepto:"",monto:""}); saveAll(); }
+function delInv(id){ data.invs=data.invs.filter(i=>i.id!=id); saveAll(); }
+function updInv(id,k,v){ data.invs=data.invs.map(i=>i.id==id?{...i,[k]:v}:i); saveAll(); }
+
+function renderInvs(){
+  document.getElementById("invs-list").innerHTML = data.invs.map(i=>`
+    <div class="item-box">
+      <div class="row2">
+        <input placeholder="Concepto" value="${i.concepto}" oninput="updInv(${i.id},'concepto',this.value)">
+        <input type="number" placeholder="Monto RD$" value="${i.monto}" oninput="updInv(${i.id},'monto',this.value)">
+      </div>
+      <input type="date" value="${i.fecha}" oninput="updInv(${i.id},'fecha',this.value)">
+      <button class="btn-del" onclick="delInv(${i.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+// VENTAS
+function addVenta(){ data.ventas.push({id:Date.now(),fecha:today(),concepto:"",monto:""}); saveAll(); }
+function delVenta(id){ data.ventas=data.ventas.filter(v=>v.id!=id); saveAll(); }
+function updVenta(id,k,v){ data.ventas=data.ventas.map(v2=>v2.id==id?{...v2,[k]:v}:v2); saveAll(); }
+
+function renderVentas(){
+  document.getElementById("ventas-list").innerHTML = data.ventas.map(v=>`
+    <div class="item-box">
+      <div class="row2">
+        <input placeholder="Concepto" value="${v.concepto}" oninput="updVenta(${v.id},'concepto',this.value)">
+        <input type="number" placeholder="Monto RD$" value="${v.monto}" oninput="updVenta(${v.id},'monto',this.value)">
+      </div>
+      <input type="date" value="${v.fecha}" oninput="updVenta(${v.id},'fecha',this.value)">
+      <button class="btn-del" onclick="delVenta(${v.id})">🗑 Eliminar</button>
+    </div>`).join("");
+}
+
+function render(){
+  renderLotes(); renderGastos(); renderDeps(); renderRets(); renderInvs(); renderVentas();
+
+  const pCosto = data.lotes.reduce((a,l)=>a+(parseFloat(l.cantidad)||0)*(parseFloat(l.costo)||0),0);
+  const pGast = sum(data.gastos,"monto");
+  const pInv = pCosto+pGast;
+  const pVen = data.lotes.filter(l=>l.vendido).reduce((a,l)=>a+(parseFloat(l.venta)||0),0);
+  const pGan = pVen-pInv;
+
+  const fDep = sum(data.deps,"monto");
+  const fRet = sum(data.rets,"monto");
+  const fBal = parseFloat(document.getElementById("forex-balance").value)||0;
+  const fGan = fBal+fRet-fDep;
+
+  const rInv = sum(data.invs,"monto");
+  const rVen = sum(data.ventas,"monto");
+  const rGan = rVen-rInv;
+
+  const tInv = pInv+fDep+rInv;
+  const tGan = pGan+fGan+rGan;
+
+  // Puercos
+  document.getElementById("p-costo").textContent = fDOP(pCosto);
+  document.getElementById("p-gastos").textContent = fDOP(pGast);
+  document.getElementById("p-inv").textContent = fDOP(pInv);
+  document.getElementById("p-ven").textContent = fDOP(pVen);
+  document.getElementById("p-gan").innerHTML = color(pGan);
+
+  // Forex
+  document.getElementById("f-dep").textContent = fUSD(fDep);
+  document.getElementById("f-ret").textContent = fUSD(fRet);
+  document.getElementById("f-bal").textContent = fUSD(fBal);
+  document.getElementById("f-gan").innerHTML = color(fGan,true);
+
+  // Reductor
+  document.getElementById("red-inv").textContent = fDOP(rInv);
+  document.getElementById("red-ven").textContent = fDOP(rVen);
+  document.getElementById("red-gan").innerHTML = color(rGan);
+
+  // Resumen
+  document.getElementById("r-p-inv").textContent = fDOP(pInv);
+  document.getElementById("r-p-ven").textContent = fDOP(pVen);
+  document.getElementById("r-p-gan").innerHTML = color(pGan);
+  document.getElementById("r-f-dep").textContent = fUSD(fDep);
+  document.getElementById("r-f-bal").textContent = fUSD(fBal);
+  document.getElementById("r-f-gan").innerHTML = color(fGan,true);
+  document.getElementById("r-r-inv").textContent = fDOP(rInv);
+  document.getElementById("r-r-ven").textContent = fDOP(rVen);
+  document.getElementById("r-r-gan").innerHTML = color(rGan);
+  document.getElementById("r-total-inv").textContent = fDOP(tInv);
+  document.getElementById("r-total-gan").innerHTML = color(tGan);
+}
+
+load();
+</script>
+</body>
+</html>
